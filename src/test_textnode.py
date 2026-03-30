@@ -1,6 +1,7 @@
 import unittest
 from textnode import TextNode, TextType
 
+
 class TestTextNode(unittest.TestCase):
     def test_eq(self):
         node = TextNode("This is a text node", TextType.BOLD)
@@ -71,7 +72,7 @@ class TestTextNode(unittest.TestCase):
     def test_text_link(self):
         expected_tag = "a"
         expected_value = "This is a link node"
-        expected_props = {"href" : "www.google.com"}
+        expected_props = {"href": "www.google.com"}
         node = TextNode("This is a link node", TextType.LINK, "www.google.com")
         html_node = node.text_node_to_html_node()
         self.assertEqual(html_node.tag, expected_tag)
@@ -81,12 +82,18 @@ class TestTextNode(unittest.TestCase):
     def test_text_image(self):
         expected_tag = "img"
         expected_value = None
-        expected_props = {"src" : "www.example.com/image.png", "alt" : "This is image.png"}
-        node = TextNode("This is image.png", TextType.IMAGE, "www.example.com/image.png")
+        expected_props = {
+            "src": "www.example.com/image.png",
+            "alt": "This is image.png",
+        }
+        node = TextNode(
+            "This is image.png", TextType.IMAGE, "www.example.com/image.png"
+        )
         html_node = node.text_node_to_html_node()
         self.assertEqual(html_node.tag, expected_tag)
         self.assertEqual(html_node.value, expected_value)
         self.assertEqual(html_node.props, expected_props)
+
 
 if __name__ == "__main__":
     unittest.main()
