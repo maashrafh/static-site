@@ -71,3 +71,17 @@ def split_nodes_image(old_nodes):
 
 def split_nodes_link(old_nodes):
     return split_nodes_from_markdown_extract('links', old_nodes)
+
+def text_to_textnodes(text):
+    md_delimiters = {
+        '**' : tn.TextType.BOLD,
+        '_' : tn.TextType.ITALIC,
+        '`' : tn.TextType.CODE,
+    }
+
+    nodes = [tn.TextNode(text, tn.TextType.TEXT)]
+    for delimiter in md_delimiters:
+        nodes = split_nodes_delimiter(nodes, delimiter, md_delimiters[delimiter])
+
+    nodes = split_nodes_image(split_nodes_link(nodes))
+    return nodes
