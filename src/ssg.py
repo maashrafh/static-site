@@ -28,3 +28,46 @@ def extract_markdown_images(text):
 
 def extract_markdown_links(text):
     return re.findall(r"(?<!!)\[(.*?)\]\((.*?)\)", text)
+
+def split_nodes_from_markdown_extract(type, old_nodes):
+    new_nodes = []
+    if type == 'images':
+        node_type = tn.TextType.IMAGE
+        extractor = extract_markdown_images
+        def delimiter(text, url):
+            return f'![{text}]({url})'
+    elif type == 'links':
+        node_type = tn.TextType.LINK
+        extractor = extract_markdown_links
+        def delimiter(text, url):
+            return f'[{text}]({url})'
+
+    for node in old_nodes:
+        if node.text_type is not tn.TextType.TEXT:
+            new_nodes.append(node)
+            continue
+
+        matches = extractor(node.text)
+        if not matches:
+            new_nodes.append(node)
+            continue
+
+        remaining_text = node.text
+        for text, url in matches:
+            delim = delimiter(text, url)
+            split_text = remaining_text.split(delim)
+            remaining_text = split_text[1] if len(split_text) > 1 else ''
+            if split_text[0]:
+                new_nodes.append(tn.TextNode(split_text[0], tn.TextType.TEXT))
+            new_nodes.append(tn.TextNode(text, node_type, url))
+
+        if remaining_text:
+            new_nodes.append(tn.TextNode(remaining_text, tn.TextType.TEXT))
+
+    return new_nodes
+
+def split_nodes_image(old_nodes):
+    return split_nodes_from_markdown_extract('images', old_nodes)
+
+def split_nodes_link(old_nodes):
+    return split_nodes_from_markdown_extract('links', old_nodes)
