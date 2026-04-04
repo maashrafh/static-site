@@ -1,6 +1,24 @@
-import textnode as tn
 import re
+import src.textnode as tn
+import src.htmlnode as hn
 
+
+def textnode_to_htmlnode(text_node):
+    match text_node.text_type:
+        case tn.TextType.TEXT:
+            return hn.LeafNode(None, text_node.text)
+        case tn.TextType.BOLD:
+            return hn.LeafNode("b", text_node.text)
+        case tn.TextType.ITALIC:
+            return hn.LeafNode("i", text_node.text)
+        case tn.TextType.CODE:
+            return hn.LeafNode("code", text_node.text)
+        case tn.TextType.LINK:
+            return hn.LeafNode("a", text_node.text, {"href": text_node.url})
+        case tn.TextType.IMAGE:
+            return hn.LeafNode("img", None, {"src": text_node.url, "alt": text_node.text})
+        case _:
+            raise Exception('invalid text node type')
 
 def split_nodes_delimiter(old_nodes, delimiter, text_type):
     new_nodes = []

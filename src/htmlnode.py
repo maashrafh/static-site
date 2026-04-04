@@ -44,10 +44,11 @@ class ParentNode(HTMLNode):
     def to_html(self):
         if self.tag is None:
             raise ValueError
-        if len(self.children) == 0:
+        if not self.children:
             raise ValueError("child value missing")
+        child_html = []
+        for child in self.children:
+            child_html.append(child.to_html())
         return (
-            f"<{self.tag}>{''.join(list(map(lambda x: (
-                            x.to_html()
-                        ), self.children)))}</{self.tag}>"
+            f"<{self.tag}>{''.join(child_html)}</{self.tag}>"
         )

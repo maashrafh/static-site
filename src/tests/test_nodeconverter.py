@@ -1,6 +1,7 @@
 import unittest
 
-from ssg import (
+from src.nodecoverter import (
+    textnode_to_htmlnode,
     split_nodes_delimiter,
     extract_markdown_images,
     extract_markdown_links,
@@ -8,10 +9,67 @@ from ssg import (
     split_nodes_link,
     text_to_textnodes,
 )
-from textnode import TextNode, TextType
+from src.textnode import TextNode, TextType
 
 
-class TestSSG(unittest.TestCase):
+class TestNodeconverter(unittest.TestCase):
+    def test_textnode_to_htmlnode(self):
+        expected_tag = None
+        expected_value = "This is a text node"
+        node = TextNode("This is a text node", TextType.TEXT)
+        html_node = textnode_to_htmlnode(node)
+        self.assertEqual(expected_tag, html_node.tag)
+        self.assertEqual(expected_value, html_node.value)
+
+    def test_textnode_to_htmlnode_bold(self):
+        expected_tag = "b"
+        expected_value = "This is a bold text node"
+        node = TextNode("This is a bold text node", TextType.BOLD)
+        html_node = textnode_to_htmlnode(node)
+        self.assertEqual(expected_tag, html_node.tag)
+        self.assertEqual(expected_value, html_node.value)
+
+    def test_textnode_to_htmlnode_italic(self):
+        expected_tag = "i"
+        expected_value = "This is a italic text node"
+        node = TextNode("This is a italic text node", TextType.ITALIC)
+        html_node = textnode_to_htmlnode(node)
+        self.assertEqual(expected_tag, html_node.tag)
+        self.assertEqual(expected_value, html_node.value)
+
+    def test_textnode_to_htmlnode_code(self):
+        expected_tag = "code"
+        expected_value = "This is a code text node"
+        node = TextNode("This is a code text node", TextType.CODE)
+        html_node = textnode_to_htmlnode(node)
+        self.assertEqual(expected_tag, html_node.tag)
+        self.assertEqual(expected_value, html_node.value)
+
+    def test_textnode_to_htmlnode_link(self):
+        expected_tag = "a"
+        expected_value = "This is a link node"
+        expected_props = {"href": "www.google.com"}
+        node = TextNode("This is a link node", TextType.LINK, "www.google.com")
+        html_node = textnode_to_htmlnode(node)
+        self.assertEqual(expected_tag, html_node.tag)
+        self.assertEqual(expected_value, html_node.value)
+        self.assertEqual(expected_props, html_node.props)
+
+    def test_textnode_to_htmlnode_image(self):
+        expected_tag = "img"
+        expected_value = None
+        expected_props = {
+            "src": "www.example.com/image.png",
+            "alt": "This is image.png",
+        }
+        node = TextNode(
+            "This is image.png", TextType.IMAGE, "www.example.com/image.png"
+        )
+        html_node = textnode_to_htmlnode(node)
+        self.assertEqual(expected_tag, html_node.tag)
+        self.assertEqual(expected_value, html_node.value)
+        self.assertEqual(expected_props, html_node.props)
+
     def test_split_nodes_delimiter(self):
         expected_nodes = [
             TextNode("This is text with a ", TextType.TEXT),
@@ -20,7 +78,7 @@ class TestSSG(unittest.TestCase):
         ]
         node = TextNode("This is text with a `code block` word", TextType.TEXT)
         new_nodes = split_nodes_delimiter([node], "`", TextType.CODE)
-        self.assertEqual(new_nodes, expected_nodes)
+        self.assertEqual(expected_nodes, new_nodes)
 
     def test_split_nodes_delimiter_two_blocks(self):
         expected_nodes = [
@@ -33,7 +91,7 @@ class TestSSG(unittest.TestCase):
             "This is text with a `code block` and another `code block`", TextType.TEXT
         )
         new_nodes = split_nodes_delimiter([node], "`", TextType.CODE)
-        self.assertEqual(new_nodes, expected_nodes)
+        self.assertEqual(expected_nodes, new_nodes)
 
     def test_split_nodes_delimiter_multiple_old_nodes(self):
         expected_nodes = [
@@ -47,7 +105,7 @@ class TestSSG(unittest.TestCase):
             TextNode("This is text with a `code block` word", TextType.TEXT),
         ]
         new_nodes = split_nodes_delimiter(nodes, "`", TextType.CODE)
-        self.assertEqual(new_nodes, expected_nodes)
+        self.assertEqual(expected_nodes, new_nodes)
 
     def test_split_nodes_delimiter_start_delim(self):
         expected_nodes = [
@@ -56,7 +114,7 @@ class TestSSG(unittest.TestCase):
         ]
         node = TextNode("`A code block` starts this node", TextType.TEXT)
         new_nodes = split_nodes_delimiter([node], "`", TextType.CODE)
-        self.assertEqual(new_nodes, expected_nodes)
+        self.assertEqual(expected_nodes, new_nodes)
 
     def test_split_nodes_delimiter_not_closed(self):
         with self.assertRaises(Exception):
@@ -67,24 +125,24 @@ class TestSSG(unittest.TestCase):
         matches = extract_markdown_images(
             "This is text with an ![image](https://i.imgur.com/zjjcJKZ.png)"
         )
-        self.assertListEqual(matches, [("image", "https://i.imgur.com/zjjcJKZ.png")])
+        self.assertListEqual([("image", "https://i.imgur.com/zjjcJKZ.png")], matches)
 
     def test_extract_markdown_images_markdown_link(self):
         matches = extract_markdown_images(
             "This is text with a link [to boot dev](https://www.boot.dev)"
         )
-        self.assertListEqual(matches, [])
+        self.assertListEqual([], matches)
 
     def test_extract_markdown_images_two_images(self):
         matches = extract_markdown_images(
             "This is text with a ![rick roll](https://i.imgur.com/aKaOqIh.gif) and ![obi wan](https://i.imgur.com/fJRm4Vk.jpeg)"
         )
         self.assertListEqual(
-            matches,
             [
                 ("rick roll", "https://i.imgur.com/aKaOqIh.gif"),
                 ("obi wan", "https://i.imgur.com/fJRm4Vk.jpeg"),
             ],
+            matches,
         )
 
     def test_extract_markdown_links_two_links(self):
@@ -92,18 +150,18 @@ class TestSSG(unittest.TestCase):
             "This is text with a link [to boot dev](https://www.boot.dev) and [to youtube](https://www.youtube.com/@bootdotdev)"
         )
         self.assertListEqual(
-            matches,
             [
                 ("to boot dev", "https://www.boot.dev"),
                 ("to youtube", "https://www.youtube.com/@bootdotdev"),
             ],
+            matches,
         )
 
     def test_extract_markdown_links_markdown_image(self):
         matches = extract_markdown_links(
             "This is text with a ![rick roll](https://i.imgur.com/aKaOqIh.gif)"
         )
-        self.assertListEqual(matches, [])
+        self.assertListEqual([], matches)
 
     def test_split_images(self):
         expected_nodes = [
@@ -116,7 +174,7 @@ class TestSSG(unittest.TestCase):
             TextType.TEXT,
         )
         new_nodes = split_nodes_image([node])
-        self.assertListEqual(new_nodes, expected_nodes)
+        self.assertListEqual(expected_nodes, new_nodes)
 
     def test_split_images_two_images(self):
         expected_nodes = [
@@ -130,7 +188,7 @@ class TestSSG(unittest.TestCase):
             TextType.TEXT,
         )
         new_nodes = split_nodes_image([node])
-        self.assertListEqual(new_nodes, expected_nodes)
+        self.assertListEqual(expected_nodes, new_nodes)
 
     def test_split_images_one_image(self):
         expected_nodes = [
@@ -142,7 +200,7 @@ class TestSSG(unittest.TestCase):
             TextType.TEXT,
         )
         new_nodes = split_nodes_image([node])
-        self.assertListEqual(new_nodes, expected_nodes)
+        self.assertListEqual(expected_nodes, new_nodes)
 
     def test_split_images_only_image(self):
         expected_nodes = [
@@ -155,7 +213,7 @@ class TestSSG(unittest.TestCase):
             TextType.TEXT,
         )
         new_nodes = split_nodes_image([node])
-        self.assertListEqual(new_nodes, expected_nodes)
+        self.assertListEqual(expected_nodes, new_nodes)
 
     def test_split_image_just_text(self):
         expected_nodes = [
@@ -164,8 +222,8 @@ class TestSSG(unittest.TestCase):
         node = TextNode("This is just text", TextType.TEXT)
         new_nodes = split_nodes_image([node])
         self.assertListEqual(
-            new_nodes,
             expected_nodes,
+            new_nodes,
         )
 
     def test_split_links(self):
@@ -180,8 +238,8 @@ class TestSSG(unittest.TestCase):
         )
         new_nodes = split_nodes_link([node])
         self.assertListEqual(
-            new_nodes,
             expected_nodes,
+            new_nodes,
         )
 
     def test_split_links_two_links(self):
@@ -199,8 +257,8 @@ class TestSSG(unittest.TestCase):
         )
         new_nodes = split_nodes_link([node])
         self.assertListEqual(
-            new_nodes,
             expected_nodes,
+            new_nodes,
         )
 
     def test_split_links_one_link(self):
@@ -213,7 +271,7 @@ class TestSSG(unittest.TestCase):
             TextType.TEXT,
         )
         new_nodes = split_nodes_link([node])
-        self.assertListEqual(new_nodes, expected_nodes)
+        self.assertListEqual(expected_nodes, new_nodes)
 
     def test_split_links_only_link(self):
         expected_nodes = [
@@ -224,7 +282,7 @@ class TestSSG(unittest.TestCase):
             TextType.TEXT,
         )
         new_nodes = split_nodes_link([node])
-        self.assertListEqual(new_nodes, expected_nodes)
+        self.assertListEqual(expected_nodes, new_nodes)
 
     def test_split_links_just_text(self):
         expected_nodes = [
@@ -233,8 +291,8 @@ class TestSSG(unittest.TestCase):
         node = TextNode("This is just text", TextType.TEXT)
         new_nodes = split_nodes_link([node])
         self.assertListEqual(
-            new_nodes,
             expected_nodes,
+            new_nodes,
         )
 
     def test_text_to_testnodes(self):
@@ -255,8 +313,8 @@ class TestSSG(unittest.TestCase):
         text = "This is **text** with an _italic_ word and a `code block` and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://boot.dev)"
         nodes = text_to_textnodes(text)
         self.assertListEqual(
-            nodes,
             expected_nodes,
+            nodes,
         )
 
     def test_text_to_testnodes_only_text(self):
@@ -269,8 +327,8 @@ class TestSSG(unittest.TestCase):
         text = "This is text with an italic word and a code block and an obi wan image https://i.imgur.com/fJRm4Vk.jpeg and a link https://boot.dev"
         nodes = text_to_textnodes(text)
         self.assertListEqual(
-            nodes,
             expected_nodes,
+            nodes,
         )
 
     def test_text_to_testnodes_nothing(self):
@@ -278,8 +336,8 @@ class TestSSG(unittest.TestCase):
         text = ''
         nodes = text_to_textnodes(text)
         self.assertListEqual(
-            nodes,
             expected_nodes,
+            nodes,
         )
 
     def test_text_to_testnodes_single_image(self):
@@ -291,8 +349,8 @@ class TestSSG(unittest.TestCase):
         text = "![This is a image](https://i.imgur.com/zjjcJKZ.png)"
         nodes = text_to_textnodes(text)
         self.assertListEqual(
-            nodes,
             expected_nodes,
+            nodes,
         )
 
     def test_text_to_testnodes_single_link(self):
@@ -302,8 +360,8 @@ class TestSSG(unittest.TestCase):
         text = "[This is a link](https://www.boot.dev)"
         nodes = text_to_textnodes(text)
         self.assertListEqual(
-            nodes,
             expected_nodes,
+            nodes,
         )
 
 if __name__ == "__main__":
